@@ -14,7 +14,10 @@ import (
 
 type Service struct {
 	pb.UnimplementedNodeServer
+
+	NodeName         string
 	storageDirectory string
+	kvstore          KVStore
 }
 
 func (s Service) Receive(ctx context.Context, data *pb.Data) (*pb.Response, error) {
@@ -24,6 +27,11 @@ func (s Service) Receive(ctx context.Context, data *pb.Data) (*pb.Response, erro
 	err := os.WriteFile(fileStoragePath, data.Chunk, os.ModePerm)
 	if err != nil {
 		return nil, err
+	}
+
+	key := fmt.Sprintf("%s-%s", s.NodeName, id)
+	if err := s.kvstore.Set(key, data.Metadata); err != nil {
+		log.Printf("[WARNING] cannot set redis key: %v\n", err)
 	}
 
 	return &pb.Response{
@@ -68,8 +76,9 @@ func (s Service) mustEmbedUnimplementedNodeServer() {
 	panic("implement me")
 }
 
-func NewService() *Service {
+func NewService(nodename, storageDirectory string, store KVStore) *Service {
 	return &Service{
-		storageDirectory: "temp",
+		storageDirectory: storageDirectory,
+		kvstore:          store,
 	}
 }
