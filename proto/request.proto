@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "./pb";
+
+message Metadata {
+  string uuid = 1;
+}
+
+message Data {
+  bytes chunk = 1;
+  Metadata metadata = 2;
+}
+
+message Response {
+  bool status = 1;
+}
+
+message HealthcheckMetadata {
+  string name = 1;
+}
+
+message Empty {
+
+}
+
+service Node {
+  rpc Receive(Data) returns (Response);
+  rpc Delete(Metadata) returns (Response);
+  rpc Healthcheck(stream HealthcheckMetadata) returns (Empty);
+}
