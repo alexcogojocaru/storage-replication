@@ -14,11 +14,13 @@ type RedisKVStore struct {
 }
 
 func NewRedisKVStore(redisHost, redisPasswd string) KVStore {
+	cli := redis.NewClient(&redis.Options{
+		Addr:     redisHost,
+		Password: redisPasswd,
+	})
+
 	return &RedisKVStore{
-		cli: redis.NewClient(&redis.Options{
-			Addr:     redisHost,
-			Password: redisPasswd,
-		}),
+		cli: cli,
 	}
 }
 

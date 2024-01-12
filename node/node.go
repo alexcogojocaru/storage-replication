@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
 	"os"
@@ -30,8 +31,14 @@ func (s Service) Receive(ctx context.Context, data *pb.Data) (*pb.Response, erro
 	}
 
 	key := fmt.Sprintf("%s-%s", s.NodeName, id)
-	if err := s.kvstore.Set(key, data.Metadata); err != nil {
-		log.Printf("[WARNING] cannot set redis key: %v\n", err)
+
+	content, err := proto.Marshal(data.Metadata)
+	if err != nil {
+		log.Printf("[WARNING] cannot marshal metadata: %v\n", err)
+	} else {
+		if err := s.kvstore.Set(key, content); err != nil {
+			log.Printf("[WARNING] cannot set redis key: %v\n", err)
+		}
 	}
 
 	return &pb.Response{
@@ -78,6 +85,7 @@ func (s Service) mustEmbedUnimplementedNodeServer() {
 
 func NewService(nodename, storageDirectory string, store KVStore) *Service {
 	return &Service{
+		NodeName:         nodename,
 		storageDirectory: storageDirectory,
 		kvstore:          store,
 	}
